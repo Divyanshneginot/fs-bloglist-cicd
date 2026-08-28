@@ -32,17 +32,16 @@ beforeEach(async () => {
 
   const passwordHash = await bcrypt.hash('testpassword', 10)
   testUser = new User({ username: 'testuser', name: 'Test User', passwordHash })
-  await testUser.save()
+  const savedUser = await testUser.save()
 
   const loginResponse = await api
     .post('/api/login')
     .send({ username: 'testuser', password: 'testpassword' })
   token = loginResponse.body.token
 
-  const blogsWithUser = initialBlogs.map(b => ({ ...b, user: testUser._id }))
+  const blogsWithUser = initialBlogs.map(b => ({ ...b, user: savedUser._id }))
   const savedBlogs = await Blog.insertMany(blogsWithUser)
-  testUser.blogs = savedBlogs.map(b => b._id)
-  await testUser.save()
+  await User.findByIdAndUpdate(savedUser._id, { blogs: savedBlogs.map(b => b._id) })
 })
 
 describe('deletion of a blog', () => {
